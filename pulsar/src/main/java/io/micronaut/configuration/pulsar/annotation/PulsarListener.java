@@ -15,11 +15,9 @@
  */
 package io.micronaut.configuration.pulsar.annotation;
 
-import io.micronaut.context.annotation.Bean;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.DefaultScope;
 import io.micronaut.messaging.annotation.MessageListener;
-import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.SubscriptionType;
 
 import java.lang.annotation.Documented;
@@ -40,7 +38,7 @@ public @interface PulsarListener {
      * If not set UUID will be generated as subscription name to avoid collisions if consumer type is Exclusive.
      *
      * @return Subscription name
-     * @see ConsumerBuilder#subscriptionType
+     * @see org.apache.pulsar.client.api.ConsumerBuilder#subscriptionType
      */
     String subscriptionName() default "";
 

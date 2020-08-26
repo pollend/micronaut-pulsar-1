@@ -42,7 +42,7 @@ class PulsarSpec extends Specification {
 
     @Shared
     @AutoCleanup
-    PulsarContainer pulsarContainer = new PulsarContainer("2.6.0")
+    PulsarContainer pulsarContainer = new PulsarContainer("2.6.1")
     @Shared
     @AutoCleanup
     ApplicationContext context

@@ -26,7 +26,7 @@ import javax.inject.Singleton;
 
 @Factory
 @Requires(beans = {PulsarClientConfiguration.class})
-public class PulsarClientFactory {
+public final class PulsarClientFactory {
 
     @Singleton
     public PulsarClient pulsarClient(PulsarClientConfiguration pulsarClientConfiguration) throws PulsarClientException {

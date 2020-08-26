@@ -19,9 +19,7 @@ import io.micronaut.configuration.pulsar.config.AbstractPulsarConfiguration;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.DefaultScope;
 import io.micronaut.messaging.annotation.MessageListener;
-import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.RegexSubscriptionMode;
-import org.apache.pulsar.client.api.Schema;
 
 import javax.validation.constraints.Pattern;
 import java.lang.annotation.Documented;
@@ -50,16 +48,16 @@ public @interface PulsarConsumer {
     String topicsPattern() default "";
 
     /**
-     * Defaults to {@code byte[]}
+     * Defaults to {@code byte[]}.
      *
      * @return Type of body in puslar message
      */
     Class<?> messageBodyType() default byte[].class;
 
     /**
-     * Defaults to {@link MessageSchema#BYTES} as default value for Puslar {@link Schema} is {@code byte[]}.
+     * Defaults to {@link MessageSchema#BYTES} as default value for Puslar {@link org.apache.pulsar.client.api.Schema} is {@code byte[]}.
      *
-     * @return
+     * @return Schema to use with pulsar topic consumer
      */
     MessageSchema schemaType() default MessageSchema.BYTES;
 
@@ -89,8 +87,7 @@ public @interface PulsarConsumer {
     String patternAutoDiscoveryPeriod();
 
     /**
-     * By default consumer should subscribe in non-blocking manner using default
-     * {@link java.util.concurrent.CompletableFuture} of {@link ConsumerBuilder#subscribeAsync()}
+     * By default consumer should subscribe in non-blocking manner using default {@link java.util.concurrent.CompletableFuture} of {@link org.apache.pulsar.client.api.ConsumerBuilder#subscribeAsync()}.
      * <p>
      * If blocking set to false application will block until consumer is successfully subscribed
      *
@@ -110,7 +107,7 @@ public @interface PulsarConsumer {
     String ackTimeout() default "";
 
     /**
-     * @return
+     * @return Number of items allowed in the queue. Default -1 as in Pulsar Java Client
      */
     int receiverQueueSize() default -1;
 
@@ -119,7 +116,7 @@ public @interface PulsarConsumer {
      * Use any value less than 0 to disable. Use anything above 0 to set lower priority level.
      *
      * @return priority level for a consumer
-     * @see ConsumerBuilder#priorityLevel(int)
+     * @see org.apache.pulsar.client.api.ConsumerBuilder#priorityLevel(int)
      */
     int priorityLevel() default -1;
 

@@ -21,11 +21,11 @@ import java.util.Properties;
 
 public abstract class AbstractPulsarAdminConfiguration<K, V> extends AbstractPulsarConfiguration<K, V> {
     /**
-     * Prefix for Pulsar administration configuration
+     * Prefix for Pulsar administration configuration.
      */
     public static final String ADMIN_PREFIX = PREFIX + ".admin";
     /**
-     * The default REST(ish) API port for Apache Pulsar cluster
+     * The default REST(ish) API port for Apache Pulsar cluster.
      */
     public static final int DEFAULT_PULSAR_ADMINISTRATION_PORT = 8080;
     /**
@@ -55,6 +55,10 @@ public abstract class AbstractPulsarAdminConfiguration<K, V> extends AbstractPul
         return Optional.ofNullable(administrationUrl);
     }
 
+    /**
+     * Set URL pointing towards the HTTP service exposed by the pulsar.
+     * @param administrationUrl
+     */
     public void setAdministrationUrl(@Nullable String administrationUrl) {
         this.administrationUrl = administrationUrl;
     }

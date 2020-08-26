@@ -17,7 +17,7 @@ package io.micronaut.configuration.pulsar.events;
 
 import org.apache.pulsar.client.api.Consumer;
 
-public class ConsumerSubscribedEvent {
+public final class ConsumerSubscribedEvent {
 
     private Consumer<?> consumer;
 

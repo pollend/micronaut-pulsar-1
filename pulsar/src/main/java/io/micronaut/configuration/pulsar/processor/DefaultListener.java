@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-class DefaultListener implements MessageListener {
+final class DefaultListener implements MessageListener {
 
-    private static Logger LOG = LoggerFactory.getLogger(DefaultListener.class);
+    private static Logger lLOG = LoggerFactory.getLogger(DefaultListener.class);
 
     private final boolean useMessageWrapper;
     private final ExecutableMethod<Object, ?> method;
@@ -60,8 +60,8 @@ class DefaultListener implements MessageListener {
         }
 
         consumer.acknowledgeAsync(msg).thenRun(() -> { //TODO: remove after testing
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Ack - " + msg.getKey());
+                    if (lLOG.isDebugEnabled()) {
+                        lLOG.debug("Ack - " + msg.getKey());
                     }
                 }
         );

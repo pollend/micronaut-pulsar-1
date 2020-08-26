@@ -17,10 +17,9 @@ package io.micronaut.configuration.pulsar.config;
 
 import java.util.Properties;
 
-public class DefaultPulsarAdministrationConfiguration extends AbstractPulsarAdminConfiguration {
+public final class DefaultPulsarAdministrationConfiguration extends AbstractPulsarAdminConfiguration {
 
     private String adminUrl = DEFAULT_PULSAR_ADMINISTRATION_ENDPOINT;
-
 
     /**
      * Constructs a new instance.

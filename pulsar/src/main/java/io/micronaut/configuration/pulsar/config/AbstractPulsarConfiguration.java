@@ -30,7 +30,7 @@ public abstract class AbstractPulsarConfiguration<K, V> {
      */
     public static final String PREFIX = "pulsar";
     /**
-     * The default server hostname or IP address
+     * The default server hostname or IP address.
      */
     public static final String DEFAULT_SERVER_HOST_ADDRESS = "localhost";
     /**
@@ -46,11 +46,11 @@ public abstract class AbstractPulsarConfiguration<K, V> {
      */
     public static final boolean DEFAULT_PULSAR_AUTHENTICATION_IS_ENABLED = false;
     /**
-     * By default Pulsar doesn't have any authentication
+     * By default Pulsar doesn't have any authentication.
      */
     public static final Authentication DEFAULT_PULSAR_AUTHENTICATION = null;
     /**
-     * Regex for validating topic name
+     * Regex for validating topic name.
      */
     public static final String TOPIC_VALIDATOR = "(persistent|non-persistent)://[a-zA-Z0-9\\-]+\\/[a-zA-Z0-9\\-]+\\/[a-zA-Z0-9\\-]+";
     public static final String TOPIC_NAME_VALIDATOR = "[a-zA-Z0-9\\-]+\\/[a-zA-Z0-9\\-]+\\/\\.+";
@@ -69,7 +69,8 @@ public abstract class AbstractPulsarConfiguration<K, V> {
     /**
      * @return The Pulsar configuration
      */
-    public @Nonnull Properties getConfig() {
+    public @Nonnull
+    Properties getConfig() {
         if (config != null) {
             return config;
         }

@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.*;
@@ -52,7 +51,7 @@ import java.util.stream.Stream;
 @Singleton
 @Requires(beans = DefaultPulsarClientConfiguration.class)
 @Context
-public class PulsarConsumerProcessor implements ExecutableMethodProcessor<PulsarListener>, AutoCloseable,
+public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<PulsarListener>, AutoCloseable,
         PulsarConsumerRegistry {
 
     private Logger LOG = LoggerFactory.getLogger(PulsarConsumerProcessor.class);
@@ -117,7 +116,7 @@ public class PulsarConsumerProcessor implements ExecutableMethodProcessor<Pulsar
                 }
             });
             if (subscribeAsync) {
-                consumerBuilder.subscribeAsync().handle( (consumer, ex) -> {
+                consumerBuilder.subscribeAsync().handle((consumer, ex) -> {
                     if (null != ex) {
                         LOG.error("Failed consumer ", ex);
                     } else {

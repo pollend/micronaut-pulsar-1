@@ -28,6 +28,7 @@ import io.micronaut.inject.qualifiers.Qualifiers;
 import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.api.ServiceUrlProvider;
 import org.apache.pulsar.client.impl.auth.AuthenticationToken;
+
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
@@ -36,7 +37,7 @@ import java.util.Properties;
 
 @ConfigurationProperties(AbstractPulsarConfiguration.PREFIX)
 @Requires(AbstractPulsarConfiguration.PREFIX)
-public class DefaultPulsarClientConfiguration extends AbstractPulsarConfiguration implements PulsarClientConfiguration {
+public final class DefaultPulsarClientConfiguration extends AbstractPulsarConfiguration implements PulsarClientConfiguration {
 
     private Integer ioThreads;
     private Integer listenerThreads;
@@ -104,7 +105,7 @@ public class DefaultPulsarClientConfiguration extends AbstractPulsarConfiguratio
     }
 
     public Optional<ServiceUrlProvider> getServiceUrlProvider() {
-        if (null == serviceUrlProvider || serviceUrlProvider.isBlank()) {
+        if (null == serviceUrlProvider || serviceUrlProvider.isEmpty()) {
             Qualifier<ServiceUrlProvider> annotation = Qualifiers.byStereotype(PulsarServiceUrlProvider.class);
             return this.applicationContext.findBean(ServiceUrlProvider.class, annotation);
         }
@@ -116,7 +117,6 @@ public class DefaultPulsarClientConfiguration extends AbstractPulsarConfiguratio
         if (StringUtils.isNotEmpty(authenticationJwt)) {
             return Optional.of(new AuthenticationToken(authenticationJwt));
         }
-        //TODO: should implement more solutions than just JWT
         return Optional.empty();
     }
 
