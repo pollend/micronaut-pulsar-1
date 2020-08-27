@@ -25,9 +25,7 @@ import io.micronaut.core.util.CollectionUtils
 import io.micronaut.core.util.StringUtils
 import io.micronaut.runtime.event.annotation.EventListener
 import io.micronaut.runtime.server.EmbeddedServer
-import org.apache.pulsar.client.admin.PulsarAdmin
 import org.apache.pulsar.client.api.*
-import org.apache.pulsar.common.policies.data.TenantInfo
 import org.testcontainers.containers.PulsarContainer
 import spock.lang.AutoCleanup
 import spock.lang.Shared
@@ -40,12 +38,14 @@ import javax.inject.Singleton
 @Stepwise
 class PulsarSpec extends Specification {
 
-    @Shared
     @AutoCleanup
+    @Shared
     PulsarContainer pulsarContainer = new PulsarContainer("2.6.1")
+
     @Shared
     @AutoCleanup
     ApplicationContext context
+
     @Shared
     @AutoCleanup
     EmbeddedServer embeddedServer
@@ -57,11 +57,6 @@ class PulsarSpec extends Specification {
                 StringUtils.EMPTY_STRING_ARRAY
         )
         context = embeddedServer.applicationContext
-        PulsarAdmin admin = PulsarAdmin.builder().serviceHttpUrl(pulsarContainer.httpServiceUrl).build()
-        TenantInfo tenant = new TenantInfo([].toSet() as Set<String>, admin.clusters().getClusters().toSet())
-        admin.tenants().createTenant("test", tenant)
-        admin.namespaces().createNamespace("test/second")
-        admin.topics().createNonPartitionedTopic("test/second/test")
     }
 
     void "test load configuration"() {
@@ -97,13 +92,15 @@ class PulsarSpec extends Specification {
     }
 
     void "test pattern consumer read with async"() {
-        when:
-        def topic = "public/default/test"
+        given:
+        def topic = "public/default/tst2"
         def producer = context.getBean(PulsarClient).newProducer().topic(topic).create()
         def consumerPatternTester = context.getBean(PulsarConsumerTopicPatternTester)
         //consumer using pattern subscription and async mode and different order of method args
         EventInterceptor interceptor = context.getBean(EventInterceptor)
         def message = "This should be received"
+
+        when:
         MessageId messageId = producer.send(message.bytes)
 
         then:
@@ -120,18 +117,22 @@ class PulsarSpec extends Specification {
     @Singleton
     static class EventInterceptor {
         private ConsumerSubscribedEvent event
+        private Consumer<?> consumer
 
         @EventListener
         void listener(ConsumerSubscribedEvent event) {
             this.event = event
+            this.consumer = event.getConsumer()
         }
 
         boolean hasEvent() { return null != event }
 
         ConsumerSubscribedEvent getEvent() { return event }
+
+        Consumer<?> getConsumer() { return consumer }
     }
 
-    @PulsarListener()
+    @PulsarListener
     static class PulsarConsumerTopicListTester {
         String latestMessage
         MessageId latestMessageId
@@ -157,7 +158,7 @@ class PulsarSpec extends Specification {
 
         //testing default order
         @PulsarConsumer(topicsPattern = "public/default/tst2", subscriptionTopicsMode = RegexSubscriptionMode.AllTopics)
-        void topicListener(Consumer<byte[]> consumer, Message<byte[]> message) {
+        def topicListener(Consumer<byte[]> consumer, Message<byte[]> message) {
             latestMessage = new String(message.getValue())
             latestConsumer = consumer
             latestMessageId = message.messageId

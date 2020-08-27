@@ -14,6 +14,8 @@ dependencies {
     testImplementation "org.testcontainers:pulsar:1.14.3"
     testImplementation "io.micronaut.cache:micronaut-cache-core:2.0.0"
     testImplementation "org.apache.pulsar:pulsar-client-admin:$pulsarVersion"
+    testRuntimeOnly "io.micronaut:micronaut-runtime"
+    testRuntimeOnly "io.micronaut:micronaut-http-server-netty"
 }
 
 tasks.withType(Test) {

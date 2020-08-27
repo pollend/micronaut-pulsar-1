@@ -101,24 +101,11 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
             boolean subscribeAsync = topic.getRequiredValue("subscribeAsync", Boolean.class);
             String name = topic.stringValue("consumerName")
                     .orElseGet(() -> "pulsar-consumer-" + consumerCounter.get());
-            consumerBuilder.enableRetry(true);
-            consumerBuilder.consumerEventListener(new ConsumerEventListener() {
-                @Override
-                public void becameActive(Consumer<?> consumer, int partitionId) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Consumer Active : {} {}", consumer.getConsumerName(), consumer.getTopic());
-                    }
-                }
-
-                @Override
-                public void becameInactive(Consumer<?> consumer, int partitionId) {
-
-                }
-            });
+            consumerBuilder.consumerName(name);
             if (subscribeAsync) {
                 consumerBuilder.subscribeAsync().handle((consumer, ex) -> {
                     if (null != ex) {
-                        LOG.error("Failed consumer ", ex);
+                        LOG.error("Could not start pulsar producer ", ex);
                     } else {
                         consumers.put(name, consumer);
                         applicationEventPublisher.publishEventAsync(new ConsumerSubscribedEvent(consumer));
