@@ -33,7 +33,6 @@ import io.micronaut.core.util.ArrayUtils;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.inject.BeanDefinition;
 import io.micronaut.inject.ExecutableMethod;
-import io.micronaut.runtime.ApplicationConfiguration;
 import org.apache.pulsar.client.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,22 +53,18 @@ import java.util.stream.Stream;
 public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<PulsarListener>, AutoCloseable,
         PulsarConsumerRegistry {
 
-    private Logger LOG = LoggerFactory.getLogger(PulsarConsumerProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PulsarConsumerProcessor.class);
 
-    private ApplicationEventPublisher applicationEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final BeanContext beanContext;
-    private final ApplicationConfiguration applicationConfiguration;
-    private PulsarClient pulsarClient;
-    private Map<String, Consumer> consumers = new ConcurrentHashMap<>();
-    private Map<String, Consumer> paused = new ConcurrentHashMap<>();
-    private AtomicInteger consumerCounter = new AtomicInteger(10);
+    private final PulsarClient pulsarClient;
+    private final Map<String, Consumer<?>> consumers = new ConcurrentHashMap<>();
+    private final Map<String, Consumer<?>> paused = new ConcurrentHashMap<>();
+    private final AtomicInteger consumerCounter = new AtomicInteger(10);
 
-    public PulsarConsumerProcessor(
-            ApplicationConfiguration applicationConfiguration,
-            ApplicationEventPublisher applicationEventPublisher,
-            BeanContext beanContext,
-            PulsarClient pulsarClient) {
-        this.applicationConfiguration = applicationConfiguration;
+    public PulsarConsumerProcessor(ApplicationEventPublisher applicationEventPublisher,
+                                   BeanContext beanContext,
+                                   PulsarClient pulsarClient) {
         this.applicationEventPublisher = applicationEventPublisher;
         this.beanContext = beanContext;
         this.pulsarClient = pulsarClient;
@@ -103,14 +98,9 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
                     .orElseGet(() -> "pulsar-consumer-" + consumerCounter.get());
             consumerBuilder.consumerName(name);
             if (subscribeAsync) {
-                consumerBuilder.subscribeAsync().handle((consumer, ex) -> {
-                    if (null != ex) {
-                        LOG.error("Could not start pulsar producer ", ex);
-                    } else {
-                        consumers.put(name, consumer);
-                        applicationEventPublisher.publishEventAsync(new ConsumerSubscribedEvent(consumer));
-                    }
-                    return consumer;
+                consumerBuilder.subscribeAsync().thenApply(x -> {
+                    consumers.put(name, x);
+                    return x;
                 });
             } else {
                 try {
@@ -226,12 +216,15 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
     }
 
     @Override
-    public void close() throws Exception {
-
+    public void close() throws PulsarClientException {
+        for (Consumer<?> consumer : getConsumers().values()) {
+            consumer.unsubscribe();
+            consumer.close();
+        }
     }
 
     @Override
-    public Map<String, Consumer> getConsumers() {
+    public Map<String, Consumer<?>> getConsumers() {
         return Collections.unmodifiableMap(consumers);
     }
 
@@ -267,7 +260,7 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
             throw new IllegalArgumentException("No consumer found for ID: " + id);
         }
 
-        Consumer consumer = consumers.get(id);
+        Consumer<?> consumer = consumers.get(id);
         consumer.pause();
         paused.put(id, consumer);
     }
@@ -275,7 +268,7 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
     @Override
     public void resume(@Nonnull String id) {
         if (StringUtils.isNotEmpty(id) && consumers.containsKey(id)) {
-            Consumer consumer = paused.remove(id);
+            Consumer<?> consumer = paused.remove(id);
             consumer.resume();
         } else {
             throw new IllegalArgumentException("No consumer found for ID: " + id);

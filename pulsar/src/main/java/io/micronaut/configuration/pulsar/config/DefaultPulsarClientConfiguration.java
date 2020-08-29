@@ -37,6 +37,7 @@ import java.util.Properties;
 
 @ConfigurationProperties(AbstractPulsarConfiguration.PREFIX)
 @Requires(AbstractPulsarConfiguration.PREFIX)
+@Requires(missingBeans = AbstractPulsarConfiguration.class)
 public final class DefaultPulsarClientConfiguration extends AbstractPulsarConfiguration implements PulsarClientConfiguration {
 
     private Integer ioThreads;
@@ -93,8 +94,8 @@ public final class DefaultPulsarClientConfiguration extends AbstractPulsarConfig
     /**
      * @return Apache Pulsar cluster address (IP or domain or hostname + port)
      */
-    public Optional<String> getServiceUrl() {
-        return Optional.ofNullable(serviceUrl);
+    public String getServiceUrl() {
+        return Optional.ofNullable(serviceUrl).orElse(DEFAULT_BOOTSTRAP_SERVER);
     }
 
     /**

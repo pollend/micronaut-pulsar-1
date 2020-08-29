@@ -16,6 +16,7 @@
 package io.micronaut.configuration.pulsar.config;
 
 import org.apache.pulsar.client.api.Authentication;
+import org.apache.pulsar.client.impl.auth.AuthenticationDisabled;
 
 import javax.annotation.Nonnull;
 import java.util.Properties;
@@ -48,7 +49,7 @@ public abstract class AbstractPulsarConfiguration<K, V> {
     /**
      * By default Pulsar doesn't have any authentication.
      */
-    public static final Authentication DEFAULT_PULSAR_AUTHENTICATION = null;
+    public static final Authentication DEFAULT_PULSAR_AUTHENTICATION = new AuthenticationDisabled();
     /**
      * Regex for validating topic name.
      */

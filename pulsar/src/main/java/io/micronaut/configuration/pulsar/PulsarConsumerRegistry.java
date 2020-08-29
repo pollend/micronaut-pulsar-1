@@ -23,7 +23,7 @@ import java.util.Set;
 
 public interface PulsarConsumerRegistry {
 
-    Map<String, Consumer> getConsumers();
+    Map<String, Consumer<?>> getConsumers();
 
     <T> Consumer<T> getConsumer(@Nonnull String id);
 

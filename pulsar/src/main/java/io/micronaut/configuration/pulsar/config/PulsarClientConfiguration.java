@@ -21,7 +21,7 @@ import org.apache.pulsar.client.api.ServiceUrlProvider;
 import java.util.Optional;
 
 public interface PulsarClientConfiguration {
-    Optional<String> getServiceUrl();
+    String getServiceUrl();
 
     default Optional<ServiceUrlProvider> getServiceUrlProvider() {
         return Optional.empty();

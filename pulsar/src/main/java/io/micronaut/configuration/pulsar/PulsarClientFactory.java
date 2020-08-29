@@ -31,10 +31,17 @@ public final class PulsarClientFactory {
     @Singleton
     public PulsarClient pulsarClient(PulsarClientConfiguration pulsarClientConfiguration) throws PulsarClientException {
         ClientBuilder clientBuilder = PulsarClient.builder();
-        pulsarClientConfiguration.getAuthentication().ifPresent(clientBuilder::authentication);
-        pulsarClientConfiguration.getServiceUrl().ifPresent(clientBuilder::serviceUrl);
-        //NOTE: this will override service url if present
-        pulsarClientConfiguration.getServiceUrlProvider().ifPresent(clientBuilder::serviceUrlProvider);
+
+        if (pulsarClientConfiguration.getServiceUrlProvider().isPresent()) {
+            clientBuilder.serviceUrlProvider(pulsarClientConfiguration.getServiceUrlProvider().get());
+        } else { //Because service URL defaults to localhost it's required to first check for providers
+            clientBuilder.serviceUrl(pulsarClientConfiguration.getServiceUrl());
+        }
+
+        if (pulsarClientConfiguration.requiresAuthentication()) {
+            //
+            pulsarClientConfiguration.getAuthentication().ifPresent(clientBuilder::authentication);
+        }
         return clientBuilder.build();
     }
 }

@@ -34,6 +34,7 @@ import spock.lang.Stepwise
 import spock.util.concurrent.PollingConditions
 
 import javax.inject.Singleton
+import java.util.concurrent.TimeUnit
 
 @Stepwise
 class PulsarSpec extends Specification {
@@ -77,11 +78,9 @@ class PulsarSpec extends Specification {
         //simple consumer with topic list and blocking
         def message = "This should be received"
         def messageId = producer.send(message.bytes)
-        def list = context.getBean(PulsarConsumerRegistry).getConsumers()
         PollingConditions conditions = new PollingConditions(timeout: 30, delay: 1)
 
         then:
-        2 == list.size()
         conditions.eventually {
             message == consumerTester.latestMessage
             messageId == consumerTester.latestMessageId
@@ -92,44 +91,26 @@ class PulsarSpec extends Specification {
     }
 
     void "test pattern consumer read with async"() {
-        given:
-        def topic = "public/default/tst2"
-        def producer = context.getBean(PulsarClient).newProducer().topic(topic).create()
-        def consumerPatternTester = context.getBean(PulsarConsumerTopicPatternTester)
-        //consumer using pattern subscription and async mode and different order of method args
-        EventInterceptor interceptor = context.getBean(EventInterceptor)
-        def message = "This should be received"
-
         when:
-        MessageId messageId = producer.send(message.bytes)
+        String topic = 'public/default/this' //works if topic is set to test for some reason
+        PulsarConsumerTopicPatternTester consumerPatternTester = context.getBean(PulsarConsumerTopicPatternTester)
+        Producer<String> producer = context.getBean(PulsarClient).newProducer(Schema.JSON(String)).topic(topic).create()
+        String message = "This should be received"
+        PollingConditions conditions = new PollingConditions(timeout: 30, delay: 1)
+        MessageId messageId = producer.send(message)
 
         then:
-        new PollingConditions(timeout: 60, delay: 1).eventually {
-            interceptor.hasEvent()
+        null != messageId
+        null != consumerPatternTester
+        conditions.eventually {
+            println(consumerPatternTester.latestMessage)
+            println(consumerPatternTester.latestMessageId)
             message == consumerPatternTester.latestMessage
             messageId == consumerPatternTester.latestMessageId
         }
 
         cleanup:
         producer.close()
-    }
-
-    @Singleton
-    static class EventInterceptor {
-        private ConsumerSubscribedEvent event
-        private Consumer<?> consumer
-
-        @EventListener
-        void listener(ConsumerSubscribedEvent event) {
-            this.event = event
-            this.consumer = event.getConsumer()
-        }
-
-        boolean hasEvent() { return null != event }
-
-        ConsumerSubscribedEvent getEvent() { return event }
-
-        Consumer<?> getConsumer() { return consumer }
     }
 
     @PulsarListener
@@ -157,8 +138,8 @@ class PulsarSpec extends Specification {
         MessageId latestMessageId
 
         //testing default order
-        @PulsarConsumer(topicsPattern = "public/default/tst2", subscriptionTopicsMode = RegexSubscriptionMode.AllTopics)
-        def topicListener(Consumer<byte[]> consumer, Message<byte[]> message) {
+        @PulsarConsumer(topicsPattern = 'public/default/.*', subscriptionTopicsMode = RegexSubscriptionMode.AllTopics, messageBodyType = String.class, schemaType = PulsarConsumer.MessageSchema.JSON)
+        def asyncTopicListener(Consumer<byte[]> consumer, Message<String> message) {
             latestMessage = new String(message.getValue())
             latestConsumer = consumer
             latestMessageId = message.messageId
