@@ -18,12 +18,10 @@ package io.micronaut.configuration.pulsar
 import io.micronaut.configuration.pulsar.annotation.PulsarConsumer
 import io.micronaut.configuration.pulsar.annotation.PulsarListener
 import io.micronaut.configuration.pulsar.config.PulsarClientConfiguration
-import io.micronaut.configuration.pulsar.events.ConsumerSubscribedEvent
 import io.micronaut.configuration.pulsar.processor.PulsarConsumerProcessor
 import io.micronaut.context.ApplicationContext
 import io.micronaut.core.util.CollectionUtils
 import io.micronaut.core.util.StringUtils
-import io.micronaut.runtime.event.annotation.EventListener
 import io.micronaut.runtime.server.EmbeddedServer
 import org.apache.pulsar.client.api.*
 import org.testcontainers.containers.PulsarContainer
@@ -32,9 +30,6 @@ import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
 import spock.util.concurrent.PollingConditions
-
-import javax.inject.Singleton
-import java.util.concurrent.TimeUnit
 
 @Stepwise
 class PulsarSpec extends Specification {
@@ -67,7 +62,7 @@ class PulsarSpec extends Specification {
         context.containsBean(PulsarClient)
         context.containsBean(PulsarConsumerProcessor)
         context.containsBean(PulsarConsumerTopicListTester)
-        pulsarContainer.pulsarBrokerUrl == context.getBean(PulsarClientConfiguration).serviceUrl.get()
+        pulsarContainer.pulsarBrokerUrl == context.getBean(PulsarClientConfiguration).serviceUrl
     }
 
     void "test consumer read"() {
@@ -92,7 +87,7 @@ class PulsarSpec extends Specification {
 
     void "test pattern consumer read with async"() {
         when:
-        String topic = 'public/default/this' //works if topic is set to test for some reason
+        String topic = 'persistent://public/default/this' //works if topic is set to test for some reason
         PulsarConsumerTopicPatternTester consumerPatternTester = context.getBean(PulsarConsumerTopicPatternTester)
         Producer<String> producer = context.getBean(PulsarClient).newProducer(Schema.JSON(String)).topic(topic).create()
         String message = "This should be received"
@@ -100,11 +95,7 @@ class PulsarSpec extends Specification {
         MessageId messageId = producer.send(message)
 
         then:
-        null != messageId
-        null != consumerPatternTester
         conditions.eventually {
-            println(consumerPatternTester.latestMessage)
-            println(consumerPatternTester.latestMessageId)
             message == consumerPatternTester.latestMessage
             messageId == consumerPatternTester.latestMessageId
         }
@@ -134,12 +125,12 @@ class PulsarSpec extends Specification {
     @PulsarListener
     static class PulsarConsumerTopicPatternTester {
         String latestMessage
-        Consumer<byte[]> latestConsumer
+        Consumer<String> latestConsumer
         MessageId latestMessageId
 
         //testing default order
         @PulsarConsumer(topicsPattern = 'public/default/.*', subscriptionTopicsMode = RegexSubscriptionMode.AllTopics, messageBodyType = String.class, schemaType = PulsarConsumer.MessageSchema.JSON)
-        def asyncTopicListener(Consumer<byte[]> consumer, Message<String> message) {
+        def asyncTopicListener(Consumer<String> consumer, Message<String> message) {
             latestMessage = new String(message.getValue())
             latestConsumer = consumer
             latestMessageId = message.messageId

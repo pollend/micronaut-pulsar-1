@@ -42,6 +42,7 @@ public final class PulsarClientFactory {
             //
             pulsarClientConfiguration.getAuthentication().ifPresent(clientBuilder::authentication);
         }
+        
         return clientBuilder.build();
     }
 }

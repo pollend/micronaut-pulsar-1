@@ -58,12 +58,7 @@ final class DefaultListener implements MessageListener {
             default:
                 method.invoke(invoker, any);
         }
-
-        consumer.acknowledgeAsync(msg).thenRun(() -> { //TODO: remove after testing
-                    if (lLOG.isDebugEnabled()) {
-                        lLOG.debug("Ack - " + msg.getKey());
-                    }
-                }
-        );
+        //in case invoke has failed but async ack will still happen instead of negative ack
+        consumer.acknowledgeAsync(msg);
     }
 }

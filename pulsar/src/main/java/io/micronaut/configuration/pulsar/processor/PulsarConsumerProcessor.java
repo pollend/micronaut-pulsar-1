@@ -50,7 +50,7 @@ import java.util.stream.Stream;
 @Singleton
 @Requires(beans = DefaultPulsarClientConfiguration.class)
 @Context
-public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<PulsarListener>, AutoCloseable,
+public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<PulsarConsumer>, AutoCloseable,
         PulsarConsumerRegistry {
 
     private static final Logger LOG = LoggerFactory.getLogger(PulsarConsumerProcessor.class);
@@ -75,8 +75,8 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
         List<AnnotationValue<PulsarConsumer>> topicAnnotation = method.getAnnotationValuesByType(PulsarConsumer.class);
         AnnotationValue<PulsarListener> subscriptionAnnotation = method.getAnnotation(PulsarListener.class);
 
-        if (null == subscriptionAnnotation || topicAnnotation.isEmpty()) {
-            return;
+        if (topicAnnotation.isEmpty()) {
+            return; //probably never happens
         }
 
         Argument<?>[] arguments = method.getArguments();
@@ -161,12 +161,23 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
             throw new IllegalArgumentException("Pulsar consumer requires topics or topicsPattern value");
         }
 
-        String subscriptionName = listener.stringValue("subscriptionName")
-                .orElse("pulsar-subsription-" + consumerCounter.incrementAndGet());
+        if (null != listener) {
+            String subscriptionName = listener.stringValue("subscriptionName")
+                    .orElse("pulsar-subsription-" + consumerCounter.incrementAndGet());
 
-        consumer.subscriptionName(subscriptionName);
+            consumer.subscriptionName(subscriptionName);
 
-        listener.enumValue("subscriptionType", SubscriptionType.class).ifPresent(consumer::subscriptionType);
+            listener.enumValue("subscriptionType", SubscriptionType.class)
+                    .ifPresent(consumer::subscriptionType);
+
+            Optional<String> ackGroupTimeout = listener.stringValue("ackGroupTimeout");
+            if (ackGroupTimeout.isPresent()) {
+                Duration duration = Duration.parse(ackGroupTimeout.get());
+                consumer.acknowledgmentGroupTime(duration.toNanos(), TimeUnit.NANOSECONDS);
+            }
+        } else {
+            consumer.subscriptionName("pulsar-subsription-" + consumerCounter.incrementAndGet());
+        }
 
         topicAnnotation.stringValue("ackTimeout").map(Duration::parse).ifPresent(duration -> {
             long millis = duration.toMillis();
@@ -192,8 +203,11 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
     private Schema<?> decideSchema(AnnotationValue<PulsarConsumer> topicAnnotation, Class<?> messageBodyType) {
 
         PulsarConsumer.MessageSchema schema = topicAnnotation
-                .enumValue("schemaType", PulsarConsumer.MessageSchema.class)
-                .orElse(PulsarConsumer.MessageSchema.BYTES); //Although default is set avoid warnings when using get
+                .getRequiredValue("schemaType", PulsarConsumer.MessageSchema.class);
+
+        if (PulsarConsumer.MessageSchema.BYTES == schema && byte[].class != messageBodyType) {
+            return Schema.JSON(messageBodyType); //default to JSON for now
+        }
 
         switch (schema) {
             case BYTES:

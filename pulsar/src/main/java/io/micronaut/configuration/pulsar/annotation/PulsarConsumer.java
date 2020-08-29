@@ -20,6 +20,7 @@ import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.DefaultScope;
 import io.micronaut.messaging.annotation.MessageListener;
 import org.apache.pulsar.client.api.RegexSubscriptionMode;
+import org.apache.pulsar.client.api.Schema;
 
 import javax.validation.constraints.Pattern;
 import java.lang.annotation.Documented;
