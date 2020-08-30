@@ -23,6 +23,8 @@ import io.micronaut.context.ApplicationContext
 import io.micronaut.core.util.CollectionUtils
 import io.micronaut.core.util.StringUtils
 import io.micronaut.runtime.server.EmbeddedServer
+import org.apache.pulsar.client.admin.PulsarAdmin
+import org.apache.pulsar.client.admin.PulsarAdminBuilder
 import org.apache.pulsar.client.api.*
 import org.testcontainers.containers.PulsarContainer
 import spock.lang.AutoCleanup
@@ -48,6 +50,10 @@ class PulsarSpec extends Specification {
 
     def setupSpec() {
         pulsarContainer.start()
+        PulsarAdmin admin = PulsarAdmin.builder().serviceHttpUrl(pulsarContainer.httpServiceUrl).build()
+        // due to regex subscription slow updates create topic prior to subscribers
+        admin.topics().createNonPartitionedTopic("public/default/other")
+        admin.close()
         embeddedServer = ApplicationContext.run(EmbeddedServer,
                 CollectionUtils.mapOf("pulsar.service-url", pulsarContainer.pulsarBrokerUrl),
                 StringUtils.EMPTY_STRING_ARRAY
@@ -87,7 +93,7 @@ class PulsarSpec extends Specification {
 
     void "test pattern consumer read with async"() {
         when:
-        String topic = 'persistent://public/default/this' //works if topic is set to test for some reason
+        String topic = 'persistent://public/default/other'
         PulsarConsumerTopicPatternTester consumerPatternTester = context.getBean(PulsarConsumerTopicPatternTester)
         Producer<String> producer = context.getBean(PulsarClient).newProducer(Schema.JSON(String)).topic(topic).create()
         String message = "This should be received"
@@ -114,7 +120,7 @@ class PulsarSpec extends Specification {
         }
 
         //testing reverse order to ensure processor will do correct call
-        @PulsarConsumer(topics = ["public/default/test"], subscribeAsync = false)
+        @PulsarConsumer(topics = ["public/default/test"])
         def topicListener(Message<byte[]> message, Consumer<byte[]> consumer) {
             latestMessageId = message.messageId
             latestMessage = new String(message.getValue())
@@ -129,7 +135,7 @@ class PulsarSpec extends Specification {
         MessageId latestMessageId
 
         //testing default order
-        @PulsarConsumer(topicsPattern = 'public/default/.*', subscriptionTopicsMode = RegexSubscriptionMode.AllTopics, messageBodyType = String.class, schemaType = PulsarConsumer.MessageSchema.JSON)
+        @PulsarConsumer(topicsPattern = 'public/default/.*', messageBodyType = String.class)
         def asyncTopicListener(Consumer<String> consumer, Message<String> message) {
             latestMessage = new String(message.getValue())
             latestConsumer = consumer

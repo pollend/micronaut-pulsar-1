@@ -154,9 +154,13 @@ public final class PulsarConsumerProcessor implements ExecutableMethodProcessor<
         if (ArrayUtils.isNotEmpty(topics)) {
             consumer.topic(topics);
         } else if (StringUtils.isNotEmpty(topicsPattern)) {
-            consumer.topicsPattern(topicsPattern);
-            topicAnnotation.enumValue("subscriptionTopicsMode", RegexSubscriptionMode.class)
-                    .ifPresent(consumer::subscriptionTopicsMode);
+            Optional<RegexSubscriptionMode> mode = topicAnnotation.enumValue("subscriptionTopicsMode", RegexSubscriptionMode.class);
+            if (mode.isPresent()) {
+                consumer.subscriptionTopicsMode(mode.get());
+            } else {
+                consumer.subscriptionTopicsMode(RegexSubscriptionMode.AllTopics);
+            }
+            consumer.topicsPattern(topicsPattern).startMessageIdInclusive();
         } else {
             throw new IllegalArgumentException("Pulsar consumer requires topics or topicsPattern value");
         }
