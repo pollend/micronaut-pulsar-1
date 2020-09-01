@@ -3,5 +3,7 @@ introduction:
 releaseHistory: Release History
 quickStart:
   title: Quick Start
+consumer:
+  title: Creating consumers
 repository: Repository
 
